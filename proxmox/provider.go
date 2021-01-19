@@ -3,6 +3,7 @@ package proxmox
 import (
 	"crypto/tls"
 	"fmt"
+	"net/http"
 	"os"
 	"regexp"
 	"strconv"
@@ -110,7 +111,13 @@ func getClient(pm_api_url string, pm_user string, pm_password string, pm_otp str
 	if !pm_tls_insecure {
 		tlsconf = nil
 	}
-	client, _ := pxapi.NewClient(pm_api_url, nil, tlsconf, pm_timeout)
+	tr := &http.Transport{
+		TLSClientConfig:    tlsconf,
+		DisableCompression: true,
+		Proxy:              http.ProxyFromEnvironment,
+	}
+	hclient := &http.Client{Transport: tr}
+	client, _ := pxapi.NewClient(pm_api_url, hclient, tlsconf, pm_timeout)
 	err := client.Login(pm_user, pm_password, pm_otp)
 	if err != nil {
 		return nil, err
