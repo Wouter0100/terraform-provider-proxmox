@@ -885,6 +885,11 @@ func resourceVmQemuRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("ipconfig2", config.Ipconfig2)
 	// Disks.
 	configDisksSet := d.Get("disk").(*schema.Set)
+	// Remove fields that come back from the API but are not used in our schema
+	for _, diskParamMap := range config.QemuDisks {
+		delete(diskParamMap, "file")  // removed; causes a crash in proxmox-api-go
+		delete(diskParamMap, "media") // removed; results in a duplicate key issue causing a 400 from proxmox
+	}
 	activeDisksSet := UpdateDevicesSet(configDisksSet, config.QemuDisks)
 	d.Set("disk", activeDisksSet)
 	// Display.
