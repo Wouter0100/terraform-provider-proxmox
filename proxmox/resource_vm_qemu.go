@@ -889,6 +889,16 @@ func resourceVmQemuRead(d *schema.ResourceData, meta interface{}) error {
 	for _, diskParamMap := range config.QemuDisks {
 		delete(diskParamMap, "file")  // removed; causes a crash in proxmox-api-go
 		delete(diskParamMap, "media") // removed; results in a duplicate key issue causing a 400 from proxmox
+		if data, ok := diskParamMap["size"]; ok {
+			if s, ok := data.(string); ok {
+				if strings.Contains(s, "M") {
+					ss := strings.ReplaceAll(s, "M", "")
+					sz, _ := strconv.Atoi(ss)
+					mb := int(math.Round(float64(sz) / 1024.0))
+					diskParamMap["size"] = strconv.Itoa(mb)
+				}
+			}
+		}
 	}
 	activeDisksSet := UpdateDevicesSet(configDisksSet, config.QemuDisks)
 	d.Set("disk", activeDisksSet)
